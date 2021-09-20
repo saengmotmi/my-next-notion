@@ -13,5 +13,5 @@ declare module "styled-components" {
     };
   }
 
-  export interface GlobalStyle {}
+  // export interface GlobalStyle {}
 }
