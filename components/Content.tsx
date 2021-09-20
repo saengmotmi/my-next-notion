@@ -20,6 +20,8 @@ import {
   UnsupportedBlock,
 } from "@notionhq/client/build/src/api-types";
 
+import { fetcher } from "utils/api";
+
 export interface ContentProps {
   block: Block;
   children?: React.ReactNode;
@@ -93,7 +95,7 @@ function ToggleContent({ block }: { block: ToggleBlock }) {
 
   useEffect(() => {
     async function getChildrenBlocks() {
-      const { blocks } = await fetch(`/api/notion/blocks?id=${block.id}`).then((res) => res.json());
+      const { blocks } = await fetcher(`/api/notion/blocks?id=${block.id}`);
 
       setChildren(blocks.results);
     }
@@ -104,7 +106,7 @@ function ToggleContent({ block }: { block: ToggleBlock }) {
   return (
     <>
       <div>{block.toggle.text.map((t) => t.plain_text)}</div>
-      {children?.map((b) => switcher(b))}
+      {children?.map(switcher)}
     </>
   );
 }

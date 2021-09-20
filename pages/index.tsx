@@ -6,14 +6,13 @@ import {
   PersonUser as PersonUserType,
 } from "@notionhq/client/build/src/api-types";
 
+import Header from "components/Header";
 import UserInfo from "components/UserInfo";
 import Content from "components/Content";
+import { fetcher } from "utils/api";
 
 const { publicRuntimeConfig } = getConfig();
-
-async function fetcher(url: string) {
-  return await fetch(url).then((res) => res.json());
-}
+const initPage: string = publicRuntimeConfig.NOTION_PAGE_ID;
 
 export default function Home() {
   const [user, setUser] = useState<PersonUserType | null>();
@@ -34,22 +33,16 @@ export default function Home() {
       setPage(page);
     }
 
-    const initPage: string = publicRuntimeConfig.NOTION_PAGE_ID;
-    async function getBlocks(id: string, next_cursor?: string) {
-      let blocks;
+    async function getBlocks(id: string, cursor?: string) {
+      const url = !cursor
+        ? `/api/notion/blocks?id=${id}`
+        : `/api/notion/blocks?id=${id}&next_cursor=${cursor}`;
 
-      if (!next_cursor) {
-        blocks = await (await fetcher(`/api/notion/blocks?id=${id}`)).blocks;
-      } else {
-        blocks = await (
-          await fetcher(`/api/notion/blocks?id=${id}&next_cursor=${next_cursor}`)
-        ).blocks;
-      }
+      const { next_cursor, results } = await (await fetcher(url)).blocks;
 
-      const filteredBlocks = blocks.results.filter((block) => block.type !== "unsupported");
-      if (blocks.next_cursor) {
-        getBlocks(id, blocks.next_cursor);
-      }
+      const filteredBlocks = results.filter((block) => block.type !== "unsupported");
+      if (next_cursor) getBlocks(id, next_cursor);
+
       setBlocks((prev) => [...prev, ...filteredBlocks]);
     }
 
@@ -73,16 +66,6 @@ export default function Home() {
   );
 }
 
-interface HeaderProps {
-  page: PageType;
-  children?: React.ReactNode;
-}
-
-function Header({ page }: HeaderProps) {
-  return (
-    <div>
-      <img alt="header" src={page.cover.file.url} style={{ width: "100vw", height: "300px" }} />
-      <p>{page.properties.title.title[0].text.content}</p>
-    </div>
-  );
-}
+Home.getInitialProps = async function () {
+  return {};
+};
