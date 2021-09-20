@@ -1,3 +1,4 @@
+import { AppContext } from "next/app";
 import {
   Block as BlockType,
   Page as PageType,
@@ -35,9 +36,7 @@ export default function Home({ user, page, blocks }: HomeProps) {
   );
 }
 
-export const getStaticProps = async function (context) {
-  let blocks = [];
-
+export const getStaticProps = async function (context: AppContext) {
   async function getUser() {
     const { result } = await fetcher("/api/notion/user");
     return result.results[0];
@@ -50,6 +49,8 @@ export const getStaticProps = async function (context) {
   }
 
   async function getBlocks(id: string) {
+    let blocks: BlockType[] = [];
+
     return new Promise((resolve) => {
       (async function getBlock(id: string, cursor?: string) {
         const url = !cursor
@@ -58,13 +59,13 @@ export const getStaticProps = async function (context) {
 
         const { next_cursor, results } = await (await fetcher(url)).blocks;
 
-        const filteredBlocks = results.filter((block) => block.type !== "unsupported");
+        const filteredBlocks = results.filter((block: BlockType) => block.type !== "unsupported");
         if (next_cursor) {
           getBlock(id, next_cursor);
           blocks = blocks.concat(filteredBlocks);
         } else {
           blocks = blocks.concat(filteredBlocks);
-          return resolve("done");
+          return resolve(blocks);
         }
       })(id);
     });
@@ -72,7 +73,7 @@ export const getStaticProps = async function (context) {
 
   const user = await getUser();
   const page = await getPage();
-  await getBlocks(process.env.NOTION_PAGE_ID);
+  const blocks = await getBlocks(process.env.NOTION_PAGE_ID);
 
   return { props: { user, page, blocks } };
 };
