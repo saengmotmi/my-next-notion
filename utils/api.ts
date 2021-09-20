@@ -1,3 +1,9 @@
+import axios from "axios";
+
+const BASE_URL = process.env.NODE_ENV === "development" ? "http://localhost:3000" : "";
+
 export async function fetcher(url: string) {
-  return await fetch(url).then((res) => res.json());
+  const { data } = await axios.get(BASE_URL + url);
+
+  return data;
 }

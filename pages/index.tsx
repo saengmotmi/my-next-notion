@@ -1,5 +1,3 @@
-import { useState, useEffect } from "react";
-import getConfig from "next/config";
 import {
   Block as BlockType,
   Page as PageType,
@@ -11,46 +9,17 @@ import UserInfo from "components/UserInfo";
 import Content from "components/Content";
 import { fetcher } from "utils/api";
 
-const { publicRuntimeConfig } = getConfig();
-const initPage: string = publicRuntimeConfig.NOTION_PAGE_ID;
+// const { publicRuntimeConfig } = getConfig();
+// const initPage: string = publicRuntimeConfig.NOTION_PAGE_ID;
 
-export default function Home() {
-  const [user, setUser] = useState<PersonUserType | null>();
-  const [page, setPage] = useState<PageType | null>();
-  const [blocks, setBlocks] = useState<BlockType[]>([]);
+interface HomeProps {
+  user: PersonUserType;
+  page: PageType;
+  blocks: BlockType[];
+  children?: React.ReactNode;
+}
 
-  useEffect(() => {
-    async function getUser() {
-      const { result } = await fetcher("/api/notion/user");
-      const [user] = result.results;
-
-      setUser(user);
-    }
-
-    async function getPage() {
-      const { page } = await fetcher("/api/notion/page");
-
-      setPage(page);
-    }
-
-    async function getBlocks(id: string, cursor?: string) {
-      const url = !cursor
-        ? `/api/notion/blocks?id=${id}`
-        : `/api/notion/blocks?id=${id}&next_cursor=${cursor}`;
-
-      const { next_cursor, results } = await (await fetcher(url)).blocks;
-
-      const filteredBlocks = results.filter((block) => block.type !== "unsupported");
-      if (next_cursor) getBlocks(id, next_cursor);
-
-      setBlocks((prev) => [...prev, ...filteredBlocks]);
-    }
-
-    getUser();
-    getPage();
-    getBlocks(initPage);
-  }, []);
-
+export default function Home({ user, page, blocks }: HomeProps) {
   if (!user) return <>User Loading...</>;
   if (!blocks.length) return <>Contents Loading...</>;
   if (!page) return <>Page Loading...</>;
@@ -66,6 +35,44 @@ export default function Home() {
   );
 }
 
-Home.getInitialProps = async function () {
-  return {};
+export const getStaticProps = async function (context) {
+  let blocks = [];
+
+  async function getUser() {
+    const { result } = await fetcher("/api/notion/user");
+    return result.results[0];
+  }
+
+  async function getPage() {
+    return await (
+      await fetcher("/api/notion/page")
+    ).page;
+  }
+
+  async function getBlocks(id: string) {
+    return new Promise((resolve) => {
+      (async function getBlock(id: string, cursor?: string) {
+        const url = !cursor
+          ? `/api/notion/blocks?id=${id}`
+          : `/api/notion/blocks?id=${id}&next_cursor=${cursor}`;
+
+        const { next_cursor, results } = await (await fetcher(url)).blocks;
+
+        const filteredBlocks = results.filter((block) => block.type !== "unsupported");
+        if (next_cursor) {
+          getBlock(id, next_cursor);
+          blocks = blocks.concat(filteredBlocks);
+        } else {
+          blocks = blocks.concat(filteredBlocks);
+          return resolve("done");
+        }
+      })(id);
+    });
+  }
+
+  const user = await getUser();
+  const page = await getPage();
+  await getBlocks(process.env.NOTION_PAGE_ID);
+
+  return { props: { user, page, blocks } };
 };
