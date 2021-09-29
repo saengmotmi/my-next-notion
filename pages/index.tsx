@@ -21,10 +21,6 @@ interface HomeProps {
 }
 
 export default function Home({ user, page, blocks }: HomeProps) {
-  if (!user) return <>User Loading...</>;
-  if (!blocks.length) return <>Contents Loading...</>;
-  if (!page) return <>Page Loading...</>;
-
   return (
     <div>
       <Header page={page} />
@@ -53,18 +49,20 @@ export const getStaticProps = async function (context: AppContext) {
 
     return new Promise((resolve) => {
       (async function getBlock(id: string, cursor?: string) {
-        const url = !cursor
+        const isFirstCalled = !cursor;
+
+        const url = isFirstCalled
           ? `/api/notion/blocks?id=${id}`
           : `/api/notion/blocks?id=${id}&next_cursor=${cursor}`;
 
         const { next_cursor, results } = await (await fetcher(url)).blocks;
 
-        const filteredBlocks = results.filter((block: BlockType) => block.type !== "unsupported");
+        const supportedBlocks = results.filter((block: BlockType) => block.type !== "unsupported");
+        blocks = blocks.concat(supportedBlocks);
+
         if (next_cursor) {
           getBlock(id, next_cursor);
-          blocks = blocks.concat(filteredBlocks);
         } else {
-          blocks = blocks.concat(filteredBlocks);
           return resolve(blocks);
         }
       })(id);

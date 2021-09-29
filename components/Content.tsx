@@ -31,7 +31,7 @@ export default function Content({ block }: ContentProps) {
   return <div>{switcher(block)}</div>;
 }
 
-function switcher(block) {
+function switcher(block: Block) {
   switch (block.type) {
     case "paragraph":
       return <ParagraphContent block={block} />;
@@ -75,12 +75,23 @@ function ParagraphContent({ block }: { block: ParagraphBlock }) {
 }
 
 function Heading2Content({ block }: { block: HeadingTwoBlock }) {
-  return <h2>{block.heading_2.text.map((h) => h.plain_text)}</h2>;
+  return (
+    <h2 style={{ marginTop: "30px", marginBottom: "20px", fontWeight: "bold", fontSize: "25px" }}>
+      {block.heading_2.text.map((h) => h.plain_text)}
+    </h2>
+  );
 }
 
 function BulletContent({ block }: { block: BulletedListItemBlock }) {
   return (
-    <ol style={{ marginBottom: "10px" }}>
+    <ol
+      style={{
+        marginBottom: "10px",
+        display: "list-item",
+        listStyleType: "disc",
+        listStylePosition: "inside",
+      }}
+    >
       {block.bulleted_list_item.text.map((b, idx) => (
         <a key={idx} href={b.href}>
           {b.plain_text}
@@ -91,7 +102,7 @@ function BulletContent({ block }: { block: BulletedListItemBlock }) {
 }
 
 function ToggleContent({ block }: { block: ToggleBlock }) {
-  const [children, setChildren] = useState<Block[] | null>(null);
+  const [children, setChildren] = useState<Block[]>([]);
 
   useEffect(() => {
     async function getChildrenBlocks() {
@@ -106,7 +117,7 @@ function ToggleContent({ block }: { block: ToggleBlock }) {
   return (
     <>
       <div>{block.toggle.text.map((t) => t.plain_text)}</div>
-      {children?.map(switcher)}
+      <div style={{ marginLeft: "20px" }}>{children.map(switcher)}</div>
     </>
   );
 }
