@@ -7,21 +7,10 @@
 linter:
 
 #   # ESLint example. See https://help.sider.review/tools/javascript/eslint
-#   eslint:
-#     root_dir: project/
-#     dependencies:
-#       - my-eslint-plugin@2
-#     npm_install: false
-#     target:
-#       - src/
-#       - lib/
-#     ext: [.js, .jsx]
-#     config: config/.eslintrc.js
-#     ignore-path: config/.eslintignore
-#     ignore-pattern: "vendor/**"
-#     no-ignore: true
-#     global: ["require", "exports:true"]
-#     quiet: true
+  eslint:
+    root_dir: "./"
+    npm_install: false
+    config: "./eslintrc.json"
 
 #   # Misspell example. See https://help.sider.review/tools/others/misspell
 #   misspell:
